@@ -17,16 +17,11 @@ inherit autotools pkgconfig gettext systemd gobject-introspection gtk-doc manpag
 
 DEPENDS = " \
     glib-2.0 json-glib libsoup-2.4 libarchive elfutils fuse \
-    ostree libassuan libgpg-error systemd \
+    ostree libassuan libgpg-error \
     gpgme appstream-glib python3-pyparsing-native bison-native \
-    libseccomp polkit \
 "
 
-DEPENDS_class-native = " \
-    glib-2.0-native libsoup-2.4-native json-glib-native libarchive-native \
-    elfutils-native fuse-native ostree-native \
-    libassuan-native libgpg-error-native \
-    gpgme-native appstream-glib-native python3-pyparsing-native bison-native \
+DEPENDS_append_class-native = " \
 "
 
 RDEPENDS_${PN}_class-target = " \
@@ -36,9 +31,13 @@ RDEPENDS_${PN}_class-target = " \
 AUTO_LIBNAME_PKGS = ""
 
 # package configuration
-PACKAGECONFIG ?= ""
+PACKAGECONFIG ??= "${@bb.utils.contains('DISTRO_FEATURES','systemd','systemd','',d)} \
+                    ${@bb.utils.contains('DISTRO_FEATURES','polkit','system-helper','',d)} \
+                    ${@bb.utils.contains('DISTRO_FEATURES','x11','x11','',d)} \
+                    "
 
-PACKAGECONFIG[seccomp] = "--enable-seccomp,--disable-seccomp,seccomp"
+PACKAGECONFIG[systemd] = "--with-systemd,,systemd"
+PACKAGECONFIG[seccomp] = "--enable-seccomp,--disable-seccomp,libseccomp"
 PACKAGECONFIG[x11] = "--enable-xauth,--disable-xauth,x11"
 PACKAGECONFIG[system-helper] = "--enable-system-helper,--disable-system-helper,polkit"
 
@@ -46,15 +45,8 @@ EXTRA_OECONF += " \
     --disable-docbook-docs \
     --disable-gtk-doc-html \
     --disable-documentation \
-    --with-systemdsystemunitdir=${systemd_unitdir}/system \
-"
-
-EXTRA_OECONF_class-target += " \
-    --disable-docbook-docs \
-    --disable-gtk-doc-html \
-    --disable-documentation \
-    --with-systemdsystemunitdir=${systemd_unitdir}/system \
     --disable-selinux-module \
+    --with-systemdsystemunitdir=${systemd_unitdir}/system \
 "
 
 # package content
